@@ -6,16 +6,15 @@ import java.util.Objects;
 /**
  * Created by denis on 03.01.20.
  */
-public class Parser {
+class Parser {
 
-    //TODO доделать замену пробелов, и реакцию на другие некорректные символы
-    //TODO обработка случая, когда удаляются нужные внешние собки
+    //TODO доделать реакцию на другие некорректные символы
 
-    ArrayList<String> lexemes; //Выражение, разбитое на лексемы
-    Lexeme current_operand = Lexeme.Variable; //Текущий приоритетный оператор
-    int brackets_position = -1; //Положение открывающей скобки
+    private ArrayList<String> lexemes; //Выражение, разбитое на лексемы
+    private Lexeme current_operand = Lexeme.Variable; //Текущий приоритетный оператор
+    private int brackets_position = -1; //Положение открывающей скобки
 
-    enum Lexeme{  //Список *enum* возможных лексем, для удобства идентификации
+    private enum Lexeme{  //Список *enum* возможных лексем, для удобства идентификации
         Variable, Denial, Conjunction, Disjunction, Implication, Bracket_IN, Bracket_OUT
     }
 
@@ -25,7 +24,7 @@ public class Parser {
     }
 
     void parse(String expression){
-        expression = expression.replaceAll("//s+","");
+        expression = expression.replaceAll(" +","");
         System.out.println(expression);
         lexemes.clear(); //Очистка лексем с прошлого теста
         buildLex(expression); //Разбивка на лексемы
@@ -169,6 +168,7 @@ public class Parser {
             return result;
         }
         current_operand = Lexeme.Variable;
+        System.out.println("Error: operator not found");
         return null; //По-идее, сюда и не дойдет :), т.к. приоритетный оператор существует на любой глубине вложенности
     }
 
@@ -180,12 +180,12 @@ public class Parser {
             for (int i = start; i < finish; i++) {
                 subExp.add(expression.get(i));
             }
-            if (subExp.get(0).equals("(") && subExp.get(subExp.size()-1).equals(")")) {//Удаление лишних внешних скобок
+            if (subExp.get(0).equals("(") && subExp.get(subExp.size()-1).equals(")") && sameDepth(subExp)) {//Удаление лишних внешних скобок
                 subExp.remove(0);
                 subExp.remove(subExp.size() - 1);
             }
         }else{ //Получение выражения в случае с отрицанием
-            int brackets_counter = 0;
+            int brackets_counter;
             int i = start ;
             if (expression.get(i).equals("(")){ //Обработка скобок после отрицания
                 brackets_counter = 1;
@@ -235,6 +235,23 @@ public class Parser {
 
         }
         return subExp;
+    }
+
+    //Проверка того, что внешние скоби связаны: _(_()()()_)_, а не ()()()
+    private boolean sameDepth(ArrayList<String> exp_lex){
+        int br_counter = 0;
+        String lexeme;
+        for (int i = 0; i < exp_lex.size(); i++) {
+            lexeme = exp_lex.get(i);
+            br_counter += (lexeme.equals("("))?1:0;
+            br_counter += (lexeme.equals(")"))?-1:0;
+            if (br_counter == 0 && i != exp_lex.size()-1){
+                //System.out.println("FALSE");
+                return false;
+            }
+        }
+        return true;
+
     }
 
     //Символьное обозначение лексемы, ERROR - вариант не предусмотрен
